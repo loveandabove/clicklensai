@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CookLens - AI Recipe Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+            color: white;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Main Upload Screen */
+        .upload-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            text-align: center;
+        }
+
+        .robot-logo {
+            margin-bottom: 30px;
+            filter: drop-shadow(0 0 20px #00FFFF);
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .app-title {
+            font-size: 3.5rem;
+            color: #00FFFF;
+            text-shadow: 0 0 30px #00FFFF;
+            margin-bottom: 10px;
+            font-weight: bold;
+            letter-spacing: 3px;
+        }
+
+        .app-subtitle {
+            font-size: 1.3rem;
+            color: #B0BEC5;
+            margin-bottom: 50px;
+            opacity: 0.9;
+        }
+
+        .upload-buttons {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .upload-btn {
+            background: linear-gradient(45deg, #00FFFF, #00BCD4);
+            border: none;
+            border-radius: 15px;
+            padding: 20px 40px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #000;
+            cursor: pointer;
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 200px;
+            justify-content: center;
+        }
+
+        .upload-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 40px rgba(0, 255, 255, 0.8);
+            background: linear-gradient(45deg, #00E5FF, #00FFFF);
+        }
+
+        /* Loading Screen */
+        .loading-screen {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            text-align: center;
+        }
+
+        .cooking-robot {
+            margin-bottom: 30px;
+            animation: robotFloat 2s ease-in-out infinite;
+        }
+
+        @keyframes robotFloat {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+        }
+
+        /* Robot Cooking Animations */
+        .hat-bounce {
+            animation: hatBounce 1.5s ease-in-out infinite;
+            transform-origin: center bottom;
+        }
+
+        @keyframes hatBounce {
+            0%, 100% { transform: translateY(0px) scale(1); }
+            50% { transform: translateY(-3px) scale(1.05); }
+        }
+
+        .eyes-blink {
+            animation: eyesBlink 3s infinite;
+        }
+
+        @keyframes eyesBlink {
+            0%, 90%, 100% { opacity: 1; }
+            95% { opacity: 0; }
+        }
+
+        .right-arm-stir {
+            animation: stirMotion 1s ease-in-out infinite;
+            transform-origin: 160px 120px;
+        }
+
+        @keyframes stirMotion {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(15deg); }
+            50% { transform: rotate(0deg); }
+            75% { transform: rotate(-15deg); }
+        }
+
+        .left-arm {
+            animation: leftArmMove 2s ease-in-out infinite;
+            transform-origin: 40px 120px;
+        }
+
+        @keyframes leftArmMove {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(-10deg); }
+        }
+
+        .cooking-effects {
+            animation: steamRise 2s ease-in-out infinite;
+        }
+
+        @keyframes steamRise {
+            0% { 
+                opacity: 0.3; 
+                transform: translateY(0px) scale(0.8); 
+            }
+            50% { 
+                opacity: 1; 
+                transform: translateY(-10px) scale(1.2); 
+            }
+            100% { 
+                opacity: 0.3; 
+                transform: translateY(-20px) scale(0.6); 
+            }
+        }
+
+        .loading-text {
+            font-size: 1.5rem;
+            color: #00FFFF;
+            text-shadow: 0 0 20px #00FFFF;
+            margin-bottom: 10px;
+        }
+
+        .loading-subtext {
+            font-size: 1rem;
+            color: #B0BEC5;
+            opacity: 0.8;
+        }
+
+        /* Recipe Selection Screen */
+        .recipe-selection {
+            display: none;
+            padding: 40px 0;
+        }
+
+        .recipe-selection h2 {
+            text-align: center;
+            font-size: 2.5rem;
+            color: #00FFFF;
+            text-shadow: 0 0 20px #00FFFF;
+            margin-bottom: 40px;
+        }
+
+        .recipe-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .recipe-card {
+            background: rgba(0, 255, 255, 0.1);
+            border: 2px solid #00FFFF;
+            border-radius: 20px;
+            padding: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .recipe-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0, 255, 255, 0.3);
+            background: rgba(0, 255, 255, 0.15);
+        }
+
+        .recipe-card.selected {
+            background: rgba(0, 255, 255, 0.2);
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.6);
+        }
+
+        .difficulty-badge {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+
+        .difficulty-easy { background: #4CAF50; color: white; }
+        .difficulty-medium { background: #FF9800; color: white; }
+        .difficulty-hard { background: #F44336; color: white; }
+
+        .recipe-title {
+            font-size: 1.5rem;
+            color: #00FFFF;
+            margin-bottom: 15px;
+            margin-right: 100px;
+        }
+
+        .recipe-meta {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            color: #B0BEC5;
+        }
+
+        .recipe-ingredients {
+            margin-bottom: 20px;
+        }
+
+        .recipe-ingredients h4 {
+            color: #00FFFF;
+            margin-bottom: 10px;
+        }
+
+        .ingredient-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .ingredient-list li {
+            padding: 5px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .ingredient-list li:before {
+            content: "▸";
+            position: absolute;
+            left: 0;
+            color: #00FFFF;
+        }
+
+        .recipe-preview {
+            color: #B0BEC5;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .start-cooking-btn {
+            background: linear-gradient(45deg, #00FFFF, #00BCD4);
+            border: none;
+            border-radius: 50px;
+            padding: 15px 40px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #000;
+            cursor: pointer;
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
+            transition: all 0.3s ease;
+            display: block;
+            margin: 40px auto;
+            min-width: 200px;
+        }
+
+        .start-cooking-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0, 255, 255, 0.8);
+        }
+
+        .start-cooking-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Single Recipe View */
+        .single-recipe {
+            display: none;
+            padding: 40px 0;
+        }
+
+        .recipe-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .recipe-header h2 {
+            font-size: 2.5rem;
+            color: #00FFFF;
+            text-shadow: 0 0 20px #00FFFF;
+            margin-bottom: 20px;
+        }
+
+        .recipe-info {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
+        }
+
+        .info-item {
+            text-align: center;
+        }
+
+        .info-value {
+            font-size: 1.5rem;
+            color: #00FFFF;
+            font-weight: bold;
+        }
+
+        .info-label {
+            font-size: 0.9rem;
+            color: #B0BEC5;
+            text-transform: uppercase;
+        }
+
+        .recipe-content {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+
+        .ingredients-section h3,
+        .instructions-section h3 {
+            color: #00FFFF;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        .instructions-list {
+            list-style: none;
+            counter-reset: step-counter;
+        }
+
+        .instruction-item {
+            counter-increment: step-counter;
+            margin-bottom: 20px;
+            padding: 20px;
+            background: rgba(0, 255, 255, 0.1);
+            border-radius: 10px;
+            border-left: 4px solid #00FFFF;
+            display: flex;
+            align-items: flex-start;
+            gap: 20px;
+        }
+
+        .step-checkbox {
+            margin-top: 5px;
+            transform: scale(1.5);
+            accent-color: #00FFFF;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #00FFFF;
+            border-radius: 4px;
+            background-color: transparent;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .step-checkbox:checked {
+            background-color: #00FFFF;
+            border-color: #00FFFF;
+        }
+
+        .step-checkbox:checked::before {
+            content: "✓";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #000;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .step-checkbox:hover {
+            border-color: #00E5FF;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+        }
+
+        .step-number {
+            background: #00FFFF;
+            color: #000;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .step-number:before {
+            content: counter(step-counter);
+        }
+
+        .step-text {
+            flex: 1;
+            line-height: 1.5;
+        }
+
+        .instruction-item.completed {
+            opacity: 0.6;
+            background: rgba(76, 175, 80, 0.2);
+            border-left-color: #4CAF50;
+        }
+
+        .instruction-item.completed .step-text {
+            text-decoration: line-through;
+        }
+
+        .back-btn {
+            background: rgba(0, 255, 255, 0.2);
+            border: 2px solid #00FFFF;
+            border-radius: 10px;
+            padding: 10px 20px;
+            color: #00FFFF;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+
+        .back-btn:hover {
+            background: rgba(0, 255, 255, 0.3);
+        }
+
+        .completion-message {
+            display: none;
+            text-align: center;
+            padding: 30px;
+            background: linear-gradient(45deg, rgba(76, 175, 80, 0.2), rgba(0, 255, 255, 0.2));
+            border-radius: 20px;
+            margin-top: 40px;
+            border: 2px solid #4CAF50;
+        }
+
+        .completion-message h3 {
+            color: #4CAF50;
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+        }
+
+        .tesla-button {
+            border: none;
+            border-radius: 8px;
+            padding: 12px 24px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-width: 140px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .tesla-button.primary {
+            background: linear-gradient(45deg, #00FFFF, #00BCD4);
+            color: #000;
+            box-shadow: 0 4px 15px rgba(0, 255, 255, 0.3);
+        }
+
+        .tesla-button.primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 255, 255, 0.5);
+            background: linear-gradient(45deg, #00E5FF, #00FFFF);
+        }
+
+        .tesla-button.secondary {
+            background: rgba(0, 255, 255, 0.1);
+            color: #00FFFF;
+            border: 1px solid rgba(0, 255, 255, 0.3);
+        }
+
+        .tesla-button.secondary:hover {
+            background: rgba(0, 255, 255, 0.2);
+            border-color: #00FFFF;
+            transform: translateY(-1px);
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .recipe-content {
+                grid-template-columns: 1fr;
+            }
+            .recipe-info {
+                gap: 20px;
+            }
+            .tesla-button {
+                min-width: 120px;
+                padding: 10px 20px;
+                font-size: 0.9rem;
+            }
+            .completion-buttons {
+                flex-direction: column !important;
+                align-items: center;
+            }
+        }
+
+        /* Hidden file input */
+        .file-input {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Upload Screen -->
+        <div class="upload-screen" id="uploadScreen">
+            <div class="robot-logo">
+                <!-- Chef Robot SVG -->
+                <svg width="150" height="150" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                            <feGaussianBlur stdDeviation="3" result="blur"/>
+                            <feMerge>
+                                <feMergeNode in="blur"/>
+                                <feMergeNode in="SourceGraphic"/>
+                            </feMerge>
+                        </filter>
+                    </defs>
+                    
+                    <!-- Chef Hat -->
+                    <ellipse cx="100" cy="25" rx="35" ry="15" stroke="#00FFFF" stroke-width="3" fill="none" filter="url(#glow)"/>
+                    <rect x="70" y="25" width="60" height="20" rx="5" stroke="#00FFFF" stroke-width="3" fill="none" filter="url(#glow)"/>
+                    
+                    <!-- Head -->
+                    <rect x="60" y="45" width="80" height="50" rx="15" stroke="#00FFFF" stroke-width="4" fill="none" filter="url(#glow)"/>
+                    
+                    <!-- Eyes -->
+                    <circle cx="80" cy="65" r="4" fill="#00FFFF" filter="url(#glow)"/>
+                    <circle cx="120" cy="65" r="4" fill="#00FFFF" filter="url(#glow)"/>
+                    
+                    <!-- Smile -->
+                    <path d="M85 80 Q100 90 115 80" stroke="#00FFFF" stroke-width="3" fill="none" filter="url(#glow)"/>
+                    
+                    <!-- Body -->
+                    <rect x="55" y="105" width="90" height="60" rx="15" stroke="#00FFFF" stroke-width="4" fill="none" filter="url(#glow)"/>
+                    
+                    <!-- Arms -->
+                    <rect x="30" y="120" width="20" height="35" rx="10" stroke="#00FFFF" stroke-width="4" fill="none" filter="url(#glow)"/>
+                    <rect x="150" y="120" width="20" height="35" rx="10" stroke="#00FFFF" stroke-width="4" fill="none" filter="url(#glow)"/>
+                    
+                    <!-- Cooking Spoon -->
+                    <rect x="175" y="115" width="4" height="45" rx="2" stroke="#00FFFF" stroke-width="2" fill="none" filter="url(#glow)"/>
+                    <ellipse cx="177" cy="110" rx="8" ry="6" stroke="#00FFFF" stroke-width="2" fill="none" filter="url(#glow)"/>
+                    
+                    <!-- Body Details -->
+                    <circle cx="100" cy="135" r="6" stroke="#00FFFF" stroke-width="2" fill="none" filter="url(#glow)"/>
+                    <rect x="85" y="150" width="30" height="6" rx="3" stroke="#00FFFF" stroke-width="2" fill="none" filter="url(#glow)"/>
+                </svg>
+            </div>
+            
+            <h1 class="app-title">COOKLENS</h1>
+            <p class="app-subtitle">Snap. Analyze. Cook.</p>
+            
+            <div class="upload-buttons">
+                <input type="file" id="imageInput" class="file-input" accept="image/*">
+                <input type="file" id="cameraInput" class="file-input" accept="image/*" capture="environment">
+                <button class="upload-btn" onclick="document.getElementById('imageInput').click()">
+                    📁 Upload Photo
+                </button>
+                <button class="upload-btn" onclick="document.getElementById('cameraInput').click()">
+                    📷 Camera
+                </button>
+            </div>
+        </div>
+
+        <!-- Loading Screen -->
+        <div class="loading-screen" id="loadingScreen">
+            <div class="cooking-robot">
+                <!-- Animated Chef Robot -->
+                <svg width="120" height="120" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <filter id="loadingGlow" x="-50%" y="-50%" width="200%" height="200%">
+                            <feGaussianBlur stdDeviation="3" result="blur"/>
+                            <feMerge>
+                                <feMergeNode in="blur"/>
+                                <feMergeNode in="SourceGraphic"/>
+                            </feMerge>
+                        </filter>
+                    </defs>
+                    
+                    <!-- Chef Hat (bouncing) -->
+                    <g class="hat-bounce">
+                        <ellipse cx="100" cy="25" rx="35" ry="15" stroke="#00FFFF" stroke-width="3" fill="none" filter="url(#loadingGlow)"/>
+                        <rect x="70" y="25" width="60" height="20" rx="5" stroke="#00FFFF" stroke-width="3" fill="none" filter="url(#loadingGlow)"/>
+                    </g>
+                    
+                    <!-- Head -->
+                    <rect x="60" y="45" width="80" height="50" rx="15" stroke="#00FFFF" stroke-width="4" fill="none" filter="url(#loadingGlow)"/>
+                    
+                    <!-- Eyes (blinking) -->
+                    <g class="eyes-blink">
+                        <circle cx="80" cy="65" r="4" fill="#00FFFF" filter="url(#loadingGlow)"/>
+                        <circle cx="120" cy="65" r="4" fill="#00FFFF" filter="url(#loadingGlow)"/>
+                    </g>
+                    
+                    <!-- Smile -->
+                    <path d="M85 80 Q100 90 115 80" stroke="#00FFFF" stroke-width="3" fill="none" filter="url(#loadingGlow)"/>
+                    
+                    <!-- Body -->
+                    <rect x="55" y="105" width="90" height="60" rx="15" stroke="#00FFFF" stroke-width="4" fill="none" filter="url(#loadingGlow)"/>
+                    
+                    <!-- Left Arm (stirring motion) -->
+                    <g class="left-arm">
+                        <rect x="30" y="120" width="20" height="35" rx="10" stroke="#00FFFF" stroke-width="4" fill="none" filter="url(#loadingGlow)"/>
+                    </g>
+                    
+                    <!-- Right Arm (holding spoon) -->
+                    <g class="right-arm-stir">
+                        <rect x="150" y="120" width="20" height="35" rx="10" stroke="#00FFFF" stroke-width="4" fill="none" filter="url(#loadingGlow)"/>
+                        <!-- Cooking Spoon (stirring) -->
+                        <rect x="175" y="115" width="4" height="45" rx="2" stroke="#00FFFF" stroke-width="2" fill="none" filter="url(#loadingGlow)"/>
+                        <ellipse cx="177" cy="110" rx="8" ry="6" stroke="#00FFFF" stroke-width="2" fill="none" filter="url(#loadingGlow)"/>
+                    </g>
+                    
+                    <!-- Body Details -->
+                    <circle cx="100" cy="135" r="6" stroke="#00FFFF" stroke-width="2" fill="none" filter="url(#loadingGlow)"/>
+                    <rect x="85" y="150" width="30" height="6" rx="3" stroke="#00FFFF" stroke-width="2" fill="none" filter="url(#loadingGlow)"/>
+                    
+                    <!-- Cooking Steam/Sparkles -->
+                    <g class="cooking-effects">
+                        <circle cx="50" cy="80" r="2" fill="#00FFFF" opacity="0.8" filter="url(#loadingGlow)"/>
+                        <circle cx="150" cy="90" r="1.5" fill="#00E5FF" opacity="0.6" filter="url(#loadingGlow)"/>
+                        <circle cx="75" cy="110" r="1" fill="#00FFFF" opacity="0.9" filter="url(#loadingGlow)"/>
+                        <circle cx="125" cy="75" r="2.5" fill="#00BCD4" opacity="0.7" filter="url(#loadingGlow)"/>
+                    </g>
+                </svg>
+            </div>
+            <div class="loading-text" id="loadingText">Analyzing your ingredients...</div>
+            <div class="loading-subtext">AI is identifying food items in your photo</div>
+        </div>
+
+        <!-- Recipe Selection Screen -->
+        <div class="recipe-selection" id="recipeSelection">
+            <div style="text-align: center; margin-bottom: 30px;">
+                <button class="tesla-button primary" onclick="backToUpload()">
+                    🏠 Back to Home
+                </button>
+            </div>
+            <h2>Choose Your Recipe</h2>
+            <div class="recipe-cards" id="recipeCards">
+                <!-- Recipe cards will be populated by JavaScript -->
+            </div>
+            <button class="start-cooking-btn" id="startCookingBtn" disabled onclick="startCooking()">
+                🍳 Start Cooking
+            </button>
+        </div>
+
+        <!-- Single Recipe View -->
+        <div class="single-recipe" id="singleRecipe">
+            <div style="display: flex; gap: 15px; margin-bottom: 30px; justify-content: center; flex-wrap: wrap;">
+                <button class="tesla-button secondary" onclick="backToSelection()">
+                    ← Back to Recipes
+                </button>
+                <button class="tesla-button primary" onclick="backToUpload()">
+                    🏠 Back to Home
+                </button>
+            </div>
+            
+            <div class="recipe-header">
+                <h2 id="recipeTitle"></h2>
+                <div class="recipe-info">
+                    <div class="info-item">
+                        <div class="info-value" id="recipeDifficulty"></div>
+                        <div class="info-label">Difficulty</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-value" id="recipePrepTime"></div>
+                        <div class="info-label">Prep Time</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-value" id="recipeServings"></div>
+                        <div class="info-label">Servings</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="recipe-content">
+                <div class="ingredients-section">
+                    <h3>Ingredients</h3>
+                    <ul class="ingredient-list" id="ingredientsList">
+                        <!-- Ingredients will be populated by JavaScript -->
+                    </ul>
+                </div>
+
+                <div class="instructions-section">
+                    <h3>Instructions</h3>
+                    <div class="instructions-list" id="instructionsList">
+                        <!-- Instructions will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="completion-message" id="completionMessage">
+                <h3>🎉 Recipe Complete!</h3>
+                <p>Congratulations! You've successfully completed this recipe. Enjoy your meal!</p>
+                
+                <div class="completion-buttons" style="margin-top: 30px; display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;">
+                    <button onclick="backToUpload()" class="tesla-button primary">
+                        🏠 Back to Home
+                    </button>
+                    <button onclick="backToSelection()" class="tesla-button secondary">
+                        📋 Try Another Recipe
+                    </button>
+                    <button onclick="window.location.reload()" class="tesla-button secondary">
+                        🔄 Start Fresh
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentRecipes = [];
+        let selectedRecipeIndex = -1;
+        let completedSteps = new Set();
+
+        const loadingMessages = [
+            "Analyzing your ingredients...",
+            "Identifying food items...",
+            "Consulting our AI chef...",
+            "Creating personalized recipes...",
+            "Almost ready..."
+        ];
+
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('imageInput').addEventListener('change', handleImageUpload);
+            document.getElementById('cameraInput').addEventListener('change', handleImageUpload);
+        });
+
+        // Handle image upload
+        async function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            startLoading(file);
+        }
+
+        // Convert file to base64
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => {
+                    const base64 = reader.result.split(',')[1];
+                    resolve(base64);
+                };
+                reader.onerror = error => reject(error);
+            });
+        }
+
+        // Start loading animation and process image
+        async function startLoading(file) {
+            showScreen('loadingScreen');
+            
+            // Animate loading messages
+            let messageIndex = 0;
+            const messageInterval = setInterval(() => {
+                document.getElementById('loadingText').textContent = loadingMessages[messageIndex];
+                messageIndex = (messageIndex + 1) % loadingMessages.length;
+            }, 2000);
+
+            try {
+                console.log("🔄 Sending image for AI analysis...");
+                
+                // Check if we're running locally or in production
+                const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+                let response;
+                
+                if (isLocal) {
+                    // Local development - use Express server
+                    console.log("📍 Local mode: Using Express server");
+                    const formData = new FormData();
+                    formData.append('image', file);
+                    
+                    response = await fetch('http://localhost:3000/api/recipe', {
+                        method: 'POST',
+                        body: formData
+                    });
+                } else {
+                    // Production - use Netlify function
+                    console.log("🌐 Production mode: Using Netlify function");
+                    const base64Image = await fileToBase64(file);
+                    
+                    response = await fetch('/.netlify/functions/recipe', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ image: base64Image })
+                    });
+                }
+
+                console.log("📡 API Response status:", response.status);
+
+                if (!response.ok) {
+                    const errorData = await response.text();
+                    console.error("❌ API Error:", errorData);
+                    throw new Error(`API Error: ${response.status} - ${errorData}`);
+                }
+
+                const data = await response.json();
+                console.log("📦 API Response:", data);
+                
+                currentRecipes = data.recipes || [];
+                console.log("✅ Recipes loaded:", currentRecipes.length, "recipes");
+                
+                clearInterval(messageInterval);
+                showRecipes();
+                
+            } catch (error) {
+                console.error('❌ Frontend Error:', error);
+                clearInterval(messageInterval);
+                
+                // Check if it's a network error or API error
+                if (error.message) {
+                    console.error('Error details:', error.message);
+                    alert(`Failed to generate recipes: ${error.message}`);
+                } else {
+                    alert('Failed to generate recipes. Please check your internet connection and try again.');
+                }
+                showScreen('uploadScreen');
+            }
+        }
+
+        // Show recipes selection screen
+        function showRecipes() {
+            const recipeCards = document.getElementById('recipeCards');
+            recipeCards.innerHTML = '';
+
+            currentRecipes.forEach((recipe, index) => {
+                const card = createRecipeCard(recipe, index);
+                recipeCards.appendChild(card);
+            });
+
+            showScreen('recipeSelection');
+        }
+
+        // Create a recipe card element
+        function createRecipeCard(recipe, index) {
+            const card = document.createElement('div');
+            card.className = 'recipe-card';
+            card.onclick = () => selectRecipe(index);
+
+            const difficultyClass = `difficulty-${recipe.difficulty.toLowerCase()}`;
+            const previewInstructions = recipe.instructions.slice(0, 2).join('. ') + '...';
+
+            card.innerHTML = `
+                <div class="difficulty-badge ${difficultyClass}">${recipe.difficulty}</div>
+                <div class="recipe-title">${recipe.title}</div>
+                <div class="recipe-meta">
+                    <span>⏱️ ${recipe.prepTime}</span>
+                    <span>👥 ${recipe.servings} servings</span>
+                </div>
+                <div class="recipe-ingredients">
+                    <h4>Key Ingredients:</h4>
+                    <ul class="ingredient-list">
+                        ${recipe.ingredients.slice(0, 4).map(ingredient => 
+                            `<li>${ingredient}</li>`
+                        ).join('')}
+                        ${recipe.ingredients.length > 4 ? '<li>+ more...</li>' : ''}
+                    </ul>
+                </div>
+                <div class="recipe-preview">${previewInstructions}</div>
+            `;
+
+            return card;
+        }
+
+        // Select a recipe
+        function selectRecipe(index) {
+            // Remove previous selection
+            document.querySelectorAll('.recipe-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+
+            // Add selection to clicked card
+            document.querySelectorAll('.recipe-card')[index].classList.add('selected');
+            
+            selectedRecipeIndex = index;
+            document.getElementById('startCookingBtn').disabled = false;
+        }
+
+        // Start cooking - show single recipe view
+        function startCooking() {
+            if (selectedRecipeIndex === -1) return;
+
+            const recipe = currentRecipes[selectedRecipeIndex];
+            showSingleRecipe(recipe);
+        }
+
+        // Show single recipe with interactive cooking
+        function showSingleRecipe(recipe) {
+            // Populate recipe details
+            document.getElementById('recipeTitle').textContent = recipe.title;
+            document.getElementById('recipeDifficulty').textContent = recipe.difficulty;
+            document.getElementById('recipePrepTime').textContent = recipe.prepTime;
+            document.getElementById('recipeServings').textContent = recipe.servings;
+
+            // Populate ingredients
+            const ingredientsList = document.getElementById('ingredientsList');
+            ingredientsList.innerHTML = recipe.ingredients.map(ingredient => 
+                `<li>${ingredient}</li>`
+            ).join('');
+
+            // Populate instructions with checkboxes
+            const instructionsList = document.getElementById('instructionsList');
+            instructionsList.innerHTML = recipe.instructions.map((instruction, index) => `
+                <div class="instruction-item" id="step-${index}">
+                    <input type="checkbox" class="step-checkbox" onchange="toggleStep(${index})">
+                    <div class="step-number"></div>
+                    <div class="step-text">${instruction}</div>
+                </div>
+            `).join('');
+
+            // Reset completion state
+            completedSteps.clear();
+            document.getElementById('completionMessage').style.display = 'none';
+
+            showScreen('singleRecipe');
+        }
+
+        // Toggle step completion
+        function toggleStep(stepIndex) {
+            const stepElement = document.getElementById(`step-${stepIndex}`);
+            
+            if (completedSteps.has(stepIndex)) {
+                completedSteps.delete(stepIndex);
+                stepElement.classList.remove('completed');
+            } else {
+                completedSteps.add(stepIndex);
+                stepElement.classList.add('completed');
+            }
+
+            // Check if all steps are completed
+            if (completedSteps.size === currentRecipes[selectedRecipeIndex].instructions.length) {
+                setTimeout(() => {
+                    document.getElementById('completionMessage').style.display = 'block';
+                    document.getElementById('completionMessage').scrollIntoView({ behavior: 'smooth' });
+                }, 500);
+            }
+        }
+
+        // Back to recipe selection
+        function backToSelection() {
+            showScreen('recipeSelection');
+        }
+
+        // Back to upload screen
+        function backToUpload() {
+            currentRecipes = [];
+            selectedRecipeIndex = -1;
+            completedSteps.clear();
+            document.getElementById('imageInput').value = '';
+            document.getElementById('cameraInput').value = '';
+            document.getElementById('startCookingBtn').disabled = true;
+            showScreen('uploadScreen');
+        }
+
+        // Show specific screen
+        function showScreen(screenId) {
+            const screens = ['uploadScreen', 'loadingScreen', 'recipeSelection', 'singleRecipe'];
+            screens.forEach(screen => {
+                document.getElementById(screen).style.display = 'none';
+            });
+            document.getElementById(screenId).style.display = screenId === 'uploadScreen' ? 'flex' : 'block';
+        }
+    </script>
+</body>
+</html>
