@@ -40,6 +40,7 @@ export const handler = async (event, context) => {
 
     // Debug logging
     console.log('API Key exists:', !!process.env.OPENAI_API_KEY);
+    console.log('API Key value:', process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.substring(0, 20) + '...' : 'MISSING');
     console.log('Image received:', !!base64Image);
     
     // Initialize OpenAI
