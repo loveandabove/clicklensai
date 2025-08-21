@@ -38,6 +38,10 @@ export const handler = async (event, context) => {
       };
     }
 
+    // Debug logging
+    console.log('API Key exists:', !!process.env.OPENAI_API_KEY);
+    console.log('Image received:', !!base64Image);
+    
     // Initialize OpenAI
     const openai = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY,
