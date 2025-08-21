@@ -1,7 +1,6 @@
 {
   "name": "clicklensai",
   "version": "1.0.0",
-  "type": "module",
   "description": "AI-powered recipe generator using OpenAI Vision",
   "dependencies": {
     "openai": "^4.104.0"
