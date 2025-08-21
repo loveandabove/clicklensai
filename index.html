@@ -816,33 +816,17 @@
             try {
                 console.log("🔄 Sending image for AI analysis...");
                 
-                // Check if we're running locally or in production
-                const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-                let response;
+                // Use Netlify function (works for both local netlify dev and production)
+                console.log("🌐 Using Netlify function");
+                const base64Image = await fileToBase64(file);
                 
-                if (isLocal) {
-                    // Local development - use Express server
-                    console.log("📍 Local mode: Using Express server");
-                    const formData = new FormData();
-                    formData.append('image', file);
-                    
-                    response = await fetch('http://localhost:3000/api/recipe', {
-                        method: 'POST',
-                        body: formData
-                    });
-                } else {
-                    // Production - use Netlify function
-                    console.log("🌐 Production mode: Using Netlify function");
-                    const base64Image = await fileToBase64(file);
-                    
-                    response = await fetch('/.netlify/functions/recipe', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ image: base64Image })
-                    });
-                }
+                const response = await fetch('/.netlify/functions/recipe', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ image: base64Image })
+                });
 
                 console.log("📡 API Response status:", response.status);
 
