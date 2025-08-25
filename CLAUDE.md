@@ -102,16 +102,39 @@ The project navigates ES module/CommonJS conflicts by:
 
 ## Debugging and Troubleshooting
 
-### Common Issues
-- **500 errors**: Check Netlify function logs for OpenAI API errors
-- **404 function errors**: Verify `netlify.toml` functions directory configuration
-- **Module syntax errors**: Ensure consistent ES module usage across files
+### Critical Deployment Issues
+- **Function not deploying**: Ensure ES module syntax consistency across all files
+- **Build failures**: Check parent directory package.json doesn't conflict with function modules
+- **Environment variables not loading**: Delete and recreate variables if they appear corrupted
+
+### OpenAI API Authentication Troubleshooting
+- **401 Authentication errors**: Most common issue is environment variable misconfiguration
+- **API key debugging**: Function includes detailed logging of key presence and format
+- **Environment variable validation**: Check Netlify dashboard shows correct key in all contexts
+
+### Function Logs Access
+Navigate to: **Netlify Dashboard** → **Logs** → **Functions** → **recipe**
+- Real-time debugging output appears here during function execution
+- Debug logs show API key status and image processing status
+- Authentication errors provide specific OpenAI error codes
+
+### Common Error Patterns
+- **"Build your first function" display**: Functions directory not properly configured or ES modules failing to compile
+- **500 errors with authentication**: Environment variables not propagating to function runtime
+- **Missing function logs**: Check deploy succeeded and functions were built successfully
 
 ### Debug Logging
-The recipe function includes debug logs for:
-- API key presence verification
-- Image data receipt confirmation
-- OpenAI API response validation
+The recipe function includes comprehensive debug logs:
+```javascript
+console.log('API Key exists:', !!process.env.OPENAI_API_KEY);
+console.log('API Key value:', process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.substring(0, 20) + '...' : 'MISSING');
+console.log('Image received:', !!base64Image);
+```
+
+### Production Environment Setup
+1. **Netlify Environment Variables**: Set `OPENAI_API_KEY` with "Same value" for all contexts
+2. **GitHub Integration**: Auto-deploy triggers on push to main branch
+3. **Function Detection**: Verify "1 Lambda function actively running in production" appears in Functions dashboard
 
 ### Local Development Testing
 ```bash
@@ -119,4 +142,15 @@ The recipe function includes debug logs for:
 curl -X POST http://localhost:8888/.netlify/functions/recipe \
   -H "Content-Type: application/json" \
   -d '{"image":"base64_image_data"}'
+
+# Monitor function reloads during development
+# Functions automatically reload when files change in netlify/functions/
 ```
+
+### Deployment Validation Checklist
+- [ ] GitHub repository connected to Netlify
+- [ ] Functions directory detected in deploy logs
+- [ ] Environment variable `OPENAI_API_KEY` properly set
+- [ ] Function appears in Netlify Functions dashboard
+- [ ] Deploy status shows "Published" not "Building"
+- [ ] Function logs show debug output when triggered

@@ -93,6 +93,87 @@
             background: linear-gradient(45deg, #00E5FF, #00FFFF);
         }
 
+        /* Ingredient Input Section */
+        .ingredient-divider {
+            margin: 40px 0;
+            position: relative;
+            text-align: center;
+        }
+
+        .ingredient-divider::before {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #00FFFF, transparent);
+        }
+
+        .ingredient-divider span {
+            background: #0a0a0a;
+            padding: 0 20px;
+            color: #00FFFF;
+            font-weight: bold;
+        }
+
+        .ingredient-input-section {
+            max-width: 600px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .ingredient-title {
+            color: #00FFFF;
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            text-shadow: 0 0 15px #00FFFF;
+        }
+
+        .ingredient-textarea {
+            width: 100%;
+            height: 120px;
+            background: rgba(0, 255, 255, 0.1);
+            border: 2px solid #00FFFF;
+            border-radius: 15px;
+            padding: 20px;
+            font-size: 1rem;
+            color: #fff;
+            resize: vertical;
+            margin-bottom: 20px;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+        }
+
+        .ingredient-textarea::placeholder {
+            color: #00BCD4;
+            opacity: 0.7;
+        }
+
+        .ingredient-textarea:focus {
+            outline: none;
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.6);
+            background: rgba(0, 255, 255, 0.15);
+        }
+
+        .generate-btn {
+            background: linear-gradient(45deg, #00FFFF, #00BCD4);
+            border: none;
+            border-radius: 15px;
+            padding: 15px 35px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #000;
+            cursor: pointer;
+            box-shadow: 0 0 25px rgba(0, 255, 255, 0.5);
+            transition: all 0.3s ease;
+        }
+
+        .generate-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 35px rgba(0, 255, 255, 0.8);
+            background: linear-gradient(45deg, #00E5FF, #00FFFF);
+        }
+
         /* Loading Screen */
         .loading-screen {
             display: none;
@@ -614,6 +695,19 @@
                     📷 Camera
                 </button>
             </div>
+            
+            <div class="ingredient-divider">
+                <span>OR</span>
+            </div>
+            
+            <div class="ingredient-input-section">
+                <h3 class="ingredient-title">List Your Ingredients</h3>
+                <textarea id="ingredientInput" class="ingredient-textarea" 
+                    placeholder="Type your ingredients here... (e.g., chicken breast, onions, garlic, olive oil)"></textarea>
+                <button class="generate-btn" onclick="generateFromIngredients()">
+                    🍳 Generate Recipes
+                </button>
+            </div>
         </div>
 
         <!-- Loading Screen -->
@@ -720,6 +814,10 @@
                         <div class="info-value" id="recipePrepTime"></div>
                         <div class="info-label">Prep Time</div>
                     </div>
+                    <div class="info-item" id="cookTimeContainer" style="display: none;">
+                        <div class="info-value" id="recipeCookTime"></div>
+                        <div class="info-label">Cook Time</div>
+                    </div>
                     <div class="info-item">
                         <div class="info-value" id="recipeServings"></div>
                         <div class="info-label">Servings</div>
@@ -789,6 +887,17 @@
             startLoading(file);
         }
 
+        // Generate recipes from ingredient list
+        async function generateFromIngredients() {
+            const ingredientText = document.getElementById('ingredientInput').value.trim();
+            if (!ingredientText) {
+                alert('Please enter some ingredients!');
+                return;
+            }
+
+            startLoadingFromText(ingredientText);
+        }
+
         // Convert file to base64
         function fileToBase64(file) {
             return new Promise((resolve, reject) => {
@@ -800,6 +909,51 @@
                 };
                 reader.onerror = error => reject(error);
             });
+        }
+
+        // Start loading animation and process ingredient text
+        async function startLoadingFromText(ingredientText) {
+            showScreen('loadingScreen');
+            
+            // Animate loading messages
+            let messageIndex = 0;
+            const messageInterval = setInterval(() => {
+                document.getElementById('loadingText').textContent = loadingMessages[messageIndex];
+                messageIndex = (messageIndex + 1) % loadingMessages.length;
+            }, 2000);
+
+            try {
+                console.log("🔄 Generating recipes from ingredients...");
+                
+                const response = await fetch('/.netlify/functions/recipe', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ ingredients: ingredientText })
+                });
+
+                console.log("📡 API Response status:", response.status);
+
+                if (!response.ok) {
+                    const errorData = await response.text();
+                    console.error("❌ API Error:", errorData);
+                    throw new Error(`Failed to generate recipes: API Error: ${response.status} - ${errorData}`);
+                }
+
+                const data = await response.json();
+                console.log("✅ Recipes generated:", data);
+                
+                clearInterval(messageInterval);
+                currentRecipes = data.recipes || [];
+                showRecipes();
+                
+            } catch (error) {
+                console.error("💥 Error:", error);
+                clearInterval(messageInterval);
+                alert(`Failed to generate recipes: ${error.message}`);
+                showScreen('uploadScreen');
+            }
         }
 
         // Start loading animation and process image
@@ -887,6 +1041,7 @@
                 <div class="recipe-title">${recipe.title}</div>
                 <div class="recipe-meta">
                     <span>⏱️ ${recipe.prepTime}</span>
+                    ${recipe.cookTime ? `<span>🔥 ${recipe.cookTime}</span>` : ''}
                     <span>👥 ${recipe.servings} servings</span>
                 </div>
                 <div class="recipe-ingredients">
@@ -933,6 +1088,15 @@
             document.getElementById('recipeDifficulty').textContent = recipe.difficulty;
             document.getElementById('recipePrepTime').textContent = recipe.prepTime;
             document.getElementById('recipeServings').textContent = recipe.servings;
+            
+            // Show cook time if available
+            const cookTimeContainer = document.getElementById('cookTimeContainer');
+            if (recipe.cookTime) {
+                document.getElementById('recipeCookTime').textContent = recipe.cookTime;
+                cookTimeContainer.style.display = 'flex';
+            } else {
+                cookTimeContainer.style.display = 'none';
+            }
 
             // Populate ingredients
             const ingredientsList = document.getElementById('ingredientsList');
